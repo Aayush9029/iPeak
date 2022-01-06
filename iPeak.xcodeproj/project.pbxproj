@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C232A2F027736E8500AA39EC /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = C232A2EF27736E8500AA39EC /* SwiftSoup */; };
+		C232A2F327736F1300AA39EC /* TorrentDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C232A2F227736F1300AA39EC /* TorrentDetailView.swift */; };
+		C232A2F727736F3700AA39EC /* TorrentDetailVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = C232A2F627736F3700AA39EC /* TorrentDetailVM.swift */; };
 		C2E8F17027696CC000736E16 /* iPeakApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E8F16F27696CC000736E16 /* iPeakApp.swift */; };
 		C2E8F17427696CC100736E16 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C2E8F17327696CC100736E16 /* Assets.xcassets */; };
 		C2E8F17727696CC100736E16 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C2E8F17627696CC100736E16 /* Preview Assets.xcassets */; };
@@ -42,6 +45,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		C232A2F227736F1300AA39EC /* TorrentDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentDetailView.swift; sourceTree = "<group>"; };
+		C232A2F627736F3700AA39EC /* TorrentDetailVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentDetailVM.swift; sourceTree = "<group>"; };
 		C2E8F16C27696CC000736E16 /* iPeak.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iPeak.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C2E8F16F27696CC000736E16 /* iPeakApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPeakApp.swift; sourceTree = "<group>"; };
 		C2E8F17127696CC000736E16 /* ContentView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView2.swift; sourceTree = "<group>"; };
@@ -69,6 +74,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C232A2F027736E8500AA39EC /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,6 +95,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C232A2F127736F0300AA39EC /* TorrentDetailViews */ = {
+			isa = PBXGroup;
+			children = (
+				C232A2F227736F1300AA39EC /* TorrentDetailView.swift */,
+			);
+			path = TorrentDetailViews;
+			sourceTree = "<group>";
+		};
 		C2E8F16327696CC000736E16 = {
 			isa = PBXGroup;
 			children = (
@@ -155,6 +169,7 @@
 			isa = PBXGroup;
 			children = (
 				C2E8F1A52769707D00736E16 /* SidebarListView.swift */,
+				C232A2F127736F0300AA39EC /* TorrentDetailViews */,
 				C2E8F1B42769877D00736E16 /* SpeedTestViews */,
 				C2E8F1B0276980CC00736E16 /* LocalIPDetailsViews */,
 				C2E8F1AB276977E300736E16 /* SubViews */,
@@ -166,6 +181,7 @@
 			isa = PBXGroup;
 			children = (
 				C2E8F1A72769709D00736E16 /* iPeakVM.swift */,
+				C232A2F627736F3700AA39EC /* TorrentDetailVM.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -219,6 +235,9 @@
 			dependencies = (
 			);
 			name = iPeak;
+			packageProductDependencies = (
+				C232A2EF27736E8500AA39EC /* SwiftSoup */,
+			);
 			productName = iPeak;
 			productReference = C2E8F16C27696CC000736E16 /* iPeak.app */;
 			productType = "com.apple.product-type.application";
@@ -291,6 +310,9 @@
 				Base,
 			);
 			mainGroup = C2E8F16327696CC000736E16;
+			packageReferences = (
+				C232A2EE27736E8500AA39EC /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+			);
 			productRefGroup = C2E8F16D27696CC000736E16 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -337,12 +359,14 @@
 				C2E8F1B2276980DE00736E16 /* SingleDetailView.swift in Sources */,
 				C2E8F17C27696CC100736E16 /* iPeak.xcdatamodeld in Sources */,
 				C2E8F1A427696EFB00736E16 /* ContentView.swift in Sources */,
+				C232A2F727736F3700AA39EC /* TorrentDetailVM.swift in Sources */,
 				C2E8F1B827698D0200736E16 /* PulseView.swift in Sources */,
 				C2E8F1A62769707D00736E16 /* SidebarListView.swift in Sources */,
 				C2E8F1A82769709D00736E16 /* iPeakVM.swift in Sources */,
 				C2E8F17927696CC100736E16 /* Persistence.swift in Sources */,
 				C2E8F17027696CC000736E16 /* iPeakApp.swift in Sources */,
 				C2E8F1B62769878B00736E16 /* SpeedTestView.swift in Sources */,
+				C232A2F327736F1300AA39EC /* TorrentDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -662,6 +686,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C232A2EE27736E8500AA39EC /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C232A2EF27736E8500AA39EC /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C232A2EE27736E8500AA39EC /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
 		C2E8F17A27696CC100736E16 /* iPeak.xcdatamodeld */ = {
