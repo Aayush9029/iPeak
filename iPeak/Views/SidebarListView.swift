@@ -56,6 +56,6 @@ struct SidebarListView: View {
 struct SidebarListView_Previews: PreviewProvider {
     static var previews: some View {
         SidebarListView()
-            .environmentObject(iPeakViewModel())
+            .environmentObject(iPeakViewModel(processClient: .preview))
     }
 }

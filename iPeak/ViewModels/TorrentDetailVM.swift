@@ -7,11 +7,13 @@
 
 import SwiftUI
 
-class Torre    ntDetailVM: ObservableObject {
-    
+@MainActor
+final class TorrentDetailVM: ObservableObject {
     @Published var ip: String
-    @Published var
-    
-    let url = URL(string:"https://en.wikipedia.org/wiki/Aglaonema")!
-    let html = try String(contentsOf: url)
-    print(html.prefix(200))
+    @Published var title: String
+
+    init(ip: String = "", title: String = "") {
+        self.ip = ip
+        self.title = title
+    }
+}

@@ -19,5 +19,8 @@ struct ContentView: View {
                 .frame(minWidth: 300, idealWidth: 600)
         }
         .symbolVariant(.fill)
+        .task {
+            await ipvm.task()
+        }
     }
 }

@@ -5,162 +5,203 @@
 //  Created by Aayush Pokharel on 2021-12-14.
 //
 
+import Foundation
 import SwiftUI
 
+struct NetworkProcessClient: Sendable {
+    var run: @Sendable (String) async -> String
 
+    static let live = Self { command in
+        await Task.detached(priority: .userInitiated) {
+            ShellProcess.run(command)
+        }.value
+    }
 
-class iPeakViewModel: ObservableObject{
-    //    MARK: - Local IP Details
+    static let preview = Self { _ in "" }
+}
+
+private enum ShellProcess {
+    static func run(_ command: String) -> String {
+        let task = Process()
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = pipe
+        task.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        task.arguments = ["-c", command]
+
+        do {
+            try task.run()
+        } catch {
+            return ""
+        }
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        task.waitUntilExit()
+
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+}
+
+struct NetworkKeyValue: Equatable {
+    var key: String
+    var value: String
+}
+
+struct WiFiDetails: Equatable {
+    var currentSignalStrength = 0
+    var ssid = "unknown"
+    var auth = "unknown"
+    var state = "unknown"
+    var mode = "station"
+    var maxRate = 0
+}
+
+struct NetworkQualitySnapshot: Equatable {
+    var currentUpload = "0 Mbps"
+    var currentDownload = "0 Mbps"
+    var uploadFlows = 0
+    var downloadFlows = 0
+    var responsiveness = "0 RPM"
+}
+
+enum NetworkInfoParser {
+    static func keyValue<S: StringProtocol>(from line: S) -> NetworkKeyValue? {
+        let cleanLine = String(line).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let separator = cleanLine.firstIndex(of: ":") else { return nil }
+
+        let key = cleanLine[..<separator].trimmingCharacters(in: .whitespaces)
+        let valueStart = cleanLine.index(after: separator)
+        let value = cleanLine[valueStart...].trimmingCharacters(in: .whitespaces)
+
+        guard !key.isEmpty else { return nil }
+        return NetworkKeyValue(key: key, value: value)
+    }
+
+    static func wifiDetails(from output: String) -> WiFiDetails {
+        var details = WiFiDetails()
+
+        for line in output.split(whereSeparator: \.isNewline) {
+            guard let pair = keyValue(from: line) else { continue }
+
+            switch pair.key {
+            case "agrCtlRSSI":
+                details.currentSignalStrength = Int(pair.value) ?? 0
+            case "SSID":
+                details.ssid = pair.value
+            case "link auth":
+                details.auth = pair.value
+            case "state":
+                details.state = pair.value
+            case "op mode":
+                details.mode = pair.value
+            case "maxRate":
+                details.maxRate = Int(pair.value) ?? 0
+            default:
+                break
+            }
+        }
+
+        return details
+    }
+
+    static func networkQuality(from output: String) -> NetworkQualitySnapshot {
+        var snapshot = NetworkQualitySnapshot()
+
+        for line in output.split(whereSeparator: \.isNewline) {
+            guard let pair = keyValue(from: line) else { continue }
+
+            switch pair.key {
+            case "Upload capacity":
+                snapshot.currentUpload = pair.value
+            case "Download capacity":
+                snapshot.currentDownload = pair.value
+            case "Upload flows":
+                snapshot.uploadFlows = Int(pair.value) ?? 0
+            case "Download flows":
+                snapshot.downloadFlows = Int(pair.value) ?? 0
+            case "Responsiveness":
+                snapshot.responsiveness = pair.value
+            default:
+                break
+            }
+        }
+
+        return snapshot
+    }
+
+    static func localIP(from output: String) -> String {
+        output.replacingOccurrences(of: "\n", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+@MainActor
+final class iPeakViewModel: ObservableObject {
     @Published var localIP: String = "0.0.0.0"
-    // agrCtlRSSI
     @Published var currentSignalStrength: Int = 0
     @Published var signalStrengths: [Int] = [Int]()
-    
-    // SSID
     @Published var SSID: String = "unknown"
-    
-    // link auth
     @Published var auth: String = "unknown"
-    
-    // state
     @Published var wifiState: String = "unknown"
-    
-    // op mode
     @Published var mode: String = "station"
-    
-    // maxRate
     @Published var maxRate: Int = 0
-    
-    
-    //    MARK: - Internet IP
-    
     @Published var ipv4: String = "0.0.0.0"
     @Published var ipv6: String = "0.0.0.0"
-    
-    //    MARK: Speed test
     @Published var isSpeedTestRunning: Bool = true
     @Published var currentUpload: String = "0 Mbps"
     @Published var currentDownload: String = "0 Mbps"
     @Published var uploadFlows: Int = 0
     @Published var downloadFlows: Int = 0
     @Published var responsiveness: String = "0 RPM"
-    
-    init(){
-        getLocalIpDetails()
+
+    private let processClient: NetworkProcessClient
+
+    init(processClient: NetworkProcessClient = .live) {
+        self.processClient = processClient
     }
-    
-    
-    func getLocalIpDetails(){
-        let shellOut = shell("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I")
-        let lines = shellOut.split(whereSeparator: \.isNewline)
-        for line in lines{
-            let key = lineToKeyVal(line).first!
-            let value = lineToKeyVal(line).last!
-            switch key{
-            case "agrCtlRSSI":
-                currentSignalStrength = Int(value ) ?? 0
-                signalStrengths.append(currentSignalStrength)
-            case "SSID":
-                SSID = value
-            case "link auth":
-                auth = value
-            case "state":
-                wifiState = value
-            case "op mode":
-                wifiState = value
-            case "maxRate":
-                maxRate = Int(value) ?? 0
-            default:
-                print("")
-                //                    print("Key not used: \(key)")
-            }
-            
-        }
-        
-        localIP = getIpUsingShell()
-        print(localIP, SSID)
+
+    func task() async {
+        await refreshLocalIpDetails()
     }
-    
-    func testDownloadSpeed () {
-        DispatchQueue.main.async {
-            self.isSpeedTestRunning = true
-        }
-        let shellOut = shell("networkQuality")
-        
-        let lines = shellOut.split(whereSeparator: \.isNewline)
-        for line in lines {
-            let key = lineToKeyVal(line).first!
-            let value = lineToKeyVal(line).last!
-            print("KEY: \(key), VALUE: \(value)")
-            switch key{
-            case "Upload capacity":
-                DispatchQueue.main.async {
-                    self.currentUpload = value
-                }
-            case "Download capacity":
-                DispatchQueue.main.async {
-                    self.currentDownload = value
-                }
-            case "Upload flows":
-                DispatchQueue.main.async {
-                    self.uploadFlows = Int(value) ?? 0
-                }
-            case "Download flows":
-                DispatchQueue.main.async {
-                    self.downloadFlows = Int(value) ?? 0
-                }
-            case "Responsiveness":
-                DispatchQueue.main.async {
-                    self.responsiveness = self.extractResponsiveness(value)
-                }
-            default:
-                print("")
-                //                    print("Key not used: \(key)")
-                
-            }
-        }
-        DispatchQueue.main.async {
-            self.isSpeedTestRunning = false
-        }
-        print(self.downloadFlows)
+
+    func refreshLocalIpDetails() async {
+        let wifiOutput = await processClient.run(Self.airportCommand)
+        let localIPOutput = await processClient.run(Self.localIPCommand)
+        let details = NetworkInfoParser.wifiDetails(from: wifiOutput)
+
+        currentSignalStrength = details.currentSignalStrength
+        signalStrengths.append(details.currentSignalStrength)
+        SSID = details.ssid
+        auth = details.auth
+        wifiState = details.state
+        mode = details.mode
+        maxRate = details.maxRate
+        localIP = NetworkInfoParser.localIP(from: localIPOutput)
     }
-    
-    
-    
-    // MARK: - Helper Functions
-    
-    func extractResponsiveness(_ value: String) -> String {
-//        TODO: Remove words inside the bracket
-        return value
+
+    func speedTestViewAppeared() async {
+        guard isSpeedTestRunning else { return }
+        await runSpeedTest()
     }
-    
-    func lineToKeyVal(_ line: String.SubSequence) -> [String] {
-        
-        let cleanLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        let key = cleanLine.split(separator: ":").first?.trimmingCharacters(in: .whitespaces) ?? "Unknown"
-        let value = cleanLine.split(separator: ":").last?.trimmingCharacters(in: .whitespaces) ?? "Unknown"
-        print(key, value)
-        return [key, value]
+
+    func restartButtonTapped() async {
+        await runSpeedTest()
     }
-    
-    func getIpUsingShell() -> String{
-        let ip = shell("ifconfig | grep \"inet \" | grep -Fv 127.0.0.1 | awk '{print $2}'")
-        return ip.replacingOccurrences(of: "\n", with: "")
+
+    private func runSpeedTest() async {
+        isSpeedTestRunning = true
+
+        let shellOutput = await processClient.run("networkQuality")
+        let snapshot = NetworkInfoParser.networkQuality(from: shellOutput)
+
+        currentUpload = snapshot.currentUpload
+        currentDownload = snapshot.currentDownload
+        uploadFlows = snapshot.uploadFlows
+        downloadFlows = snapshot.downloadFlows
+        responsiveness = snapshot.responsiveness
+        isSpeedTestRunning = false
     }
-    
-    func shell(_ command: String) -> String {
-        let task = Process()
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = pipe
-        task.arguments = ["-c", command]
-        task.launchPath = "/bin/zsh"
-        task.launch()
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8)!
-        
-        return output
-    }
+
+    private static let airportCommand = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I"
+    private static let localIPCommand = "ifconfig | grep \"inet \" | grep -Fv 127.0.0.1 | awk '{print $2}'"
 }

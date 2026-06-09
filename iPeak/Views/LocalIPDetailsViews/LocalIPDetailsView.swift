@@ -45,7 +45,7 @@ struct LocalIPDetailsView: View {
 struct LocalIPDetailsView_Previews: PreviewProvider {
     static var previews: some View {
         LocalIPDetailsView()
-            .environmentObject(iPeakViewModel())
+            .environmentObject(iPeakViewModel(processClient: .preview))
             .frame(width: 250, height: 300)
     }
 }

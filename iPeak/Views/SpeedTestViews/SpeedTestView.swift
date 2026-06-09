@@ -14,10 +14,8 @@ struct SpeedTestView: View {
         Group{
             if ipvm.isSpeedTestRunning {
                 PulseView()
-                    .onAppear {
-                        DispatchQueue.global(qos: .userInitiated).async {
-                            ipvm.testDownloadSpeed()
-                        }
+                    .task {
+                        await ipvm.speedTestViewAppeared()
                     }
             }else{
                 VStack(alignment: .center){
@@ -37,8 +35,8 @@ struct SpeedTestView: View {
                     }
                     Spacer()
                     Button {
-                        DispatchQueue.global(qos: .userInitiated).async {
-                            ipvm.testDownloadSpeed()
+                        Task {
+                            await ipvm.restartButtonTapped()
                         }
                     } label: {
                         HStack{
@@ -69,7 +67,7 @@ struct SpeedTestView_Previews: PreviewProvider {
     static var previews: some View {
         SpeedTestView()
             .frame(width: 300, height: 500)
-            .environmentObject(iPeakViewModel())
+            .environmentObject(iPeakViewModel(processClient: .preview))
     }
 }
 
